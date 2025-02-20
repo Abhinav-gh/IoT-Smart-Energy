@@ -1,4 +1,4 @@
-# fl-demo: A Flower / sklearn app
+# fl-demo: A Flower / PyTorch app
 
 ## Install dependencies and project
 

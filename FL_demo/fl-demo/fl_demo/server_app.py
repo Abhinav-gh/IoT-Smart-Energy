@@ -1,31 +1,26 @@
-"""fl-demo: A Flower / sklearn app."""
+"""fl-demo: A Flower / PyTorch app."""
 
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from fl_demo.task import get_model, get_model_params, set_initial_params
+from fl_demo.task import Net, get_weights
 
 
 def server_fn(context: Context):
     # Read from config
     num_rounds = context.run_config["num-server-rounds"]
+    fraction_fit = context.run_config["fraction-fit"]
 
-    # Create LogisticRegression Model
-    penalty = context.run_config["penalty"]
-    local_epochs = context.run_config["local-epochs"]
-    model = get_model(penalty, local_epochs)
-
-    # Setting initial parameters, akin to model.compile for keras models
-    set_initial_params(model)
-
-    initial_parameters = ndarrays_to_parameters(get_model_params(model))
+    # Initialize model parameters
+    ndarrays = get_weights(Net())
+    parameters = ndarrays_to_parameters(ndarrays)
 
     # Define strategy
     strategy = FedAvg(
-        fraction_fit=1.0,
+        fraction_fit=fraction_fit,
         fraction_evaluate=1.0,
         min_available_clients=2,
-        initial_parameters=initial_parameters,
+        initial_parameters=parameters,
     )
     config = ServerConfig(num_rounds=num_rounds)
 
