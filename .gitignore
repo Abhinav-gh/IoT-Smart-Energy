@@ -1,2 +1,4 @@
 *.csv
 iotenv
+./ashrae-energy-prediction/
+*.feather
