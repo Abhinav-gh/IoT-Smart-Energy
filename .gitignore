@@ -2,3 +2,4 @@
 iotenv
 ./ashrae-energy-prediction/
 *.feather
+*.h5
