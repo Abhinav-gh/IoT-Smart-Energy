@@ -4,3 +4,4 @@ iotenv
 *.feather
 __pycache__
 *.pth
+*.h5
