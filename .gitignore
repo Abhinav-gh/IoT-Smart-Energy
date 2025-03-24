@@ -5,3 +5,6 @@ iotenv
 __pycache__
 *.pth
 *.h5
+lgbm_model_fold1.txt
+lgbm_model_fold2.txt
+lgbm_model_fold3.txt
