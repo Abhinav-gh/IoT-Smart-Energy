@@ -2,3 +2,5 @@
 iotenv
 ./ashrae-energy-prediction/
 *.feather
+__pycache__
+*.pth

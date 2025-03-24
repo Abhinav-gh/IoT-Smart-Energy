@@ -3,6 +3,16 @@ import numpy as np
 import pandas as pd
 from scipy.signal import savgol_filter
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
+import sys
+import os
+from tqdm import tqdm
+
+# Add the root directory to Python path
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(root_dir)
+from Implementation.Utils.__utils__ import timer
+
+
 
 def load_data(data_name):
     """Loads and formats data from manually specified file paths"""
@@ -16,6 +26,30 @@ def load_data(data_name):
     }
     return pd.read_feather(base_path+file_paths[data_name])
 
+def reduceDataSet(train, test, building_meta, weather_train, weather_test):
+    """Keep only the first 290 buildings by building id. It also prints how many
+    rows were removed every time it is called."""
+    numRows = len(train)
+    train = train[train.building_id < 290]
+    print(f"INFO: Removed {numRows - len(train)} rows from train dataset.")
+    numRows = len(test)
+    test = test[test.building_id < 290]
+    print(f"INFO: Removed {numRows - len(test)} rows from test dataset.")
+
+    numRows = len(building_meta)
+    building_meta = building_meta[building_meta.building_id < 290]
+    print(f"INFO: Removed {numRows - len(building_meta)} rows from building metadata.")
+
+    # The first 290 buildings actually exists in site_id 1 and site_id 2.
+    # So remove all site_id > 2 from weather_train and weather_test
+    numRows = len(weather_train)
+    weather_train = weather_train[weather_train.site_id < 3]
+    print(f"INFO: Removed {numRows - len(weather_train)} rows from train weather dataset.")
+    numRows = len(weather_test)
+    weather_test = weather_test[weather_test.site_id < 3]
+    print(f"INFO: Removed {numRows - len(weather_test)} rows from test weather dataset.")
+
+    return train, test, building_meta, weather_train, weather_test
 # Define groupings and corresponding priors
 groups_and_priors = {
     ("hour",):        None,
@@ -40,24 +74,38 @@ def process_timestamp(df):
     df.timestamp = pd.to_datetime(df.timestamp)
     df.timestamp = (df.timestamp - pd.to_datetime("2016-01-01")).dt.total_seconds() // 3600
 
+
 def process_weather(df, dataset, fix_timestamps=True, interpolate_na=True, add_na_indicators=True):
     if fix_timestamps:
         site_GMT_offsets = [-5, 0, -7, -5, -8, 0, -5, -5, -5, -6, -7, -5, 0, -6, -5, -5]
         GMT_offset_map = {site: offset for site, offset in enumerate(site_GMT_offsets)}
         df.timestamp = df.timestamp + df.site_id.map(GMT_offset_map)
+
     if interpolate_na:
         site_dfs = []
-        for site_id in df.site_id.unique():
-            site_df = df[df.site_id == site_id].set_index("timestamp").reindex(range(8784 if dataset == "train" else 8784, 26304))
+        unique_sites = df.site_id.unique()
+        
+        for site_id in tqdm(unique_sites, desc="Processing Weather Data", unit="site"):
+            site_df = df[df.site_id == site_id].set_index("timestamp").reindex(
+                range(8784 if dataset == "train" else 8784, 26304)
+            )
             site_df.site_id = site_id
-            for col in [c for c in site_df.columns if c != "site_id"]:
-                if add_na_indicators: site_df[f"had_{col}"] = ~site_df[col].isna()
-                site_df[col] = site_df[col].interpolate(limit_direction='both', method='spline', order=3,).fillna(df[col].median())
+            for col in tqdm([c for c in site_df.columns if c != "site_id"], desc=f"Interpolating Site {site_id}", leave=False):
+                if add_na_indicators:
+                    site_df[f"had_{col}"] = ~site_df[col].isna()
+                site_df[col] = site_df[col].interpolate(
+                    limit_direction="both", method="spline", order=3
+                ).fillna(df[col].median())
+
             site_dfs.append(site_df)
+
         df = pd.concat(site_dfs).reset_index()
+
     if add_na_indicators:
-        for col in df.columns:
-            if df[col].isna().any(): df[f"had_{col}"] = ~df[col].isna()
+        for col in tqdm(df.columns, desc="Adding NA Indicators"):
+            if df[col].isna().any():
+                df[f"had_{col}"] = ~df[col].isna()
+
     return df.fillna(-1)
 
 def add_lag_feature(df, window=3, group_cols="site_id", lag_cols=["air_temperature"]):
@@ -93,29 +141,106 @@ def add_features(df):
     df["building_meter"] = bm_
     dates_range = pd.date_range(start="2015-12-31", end="2019-01-01")
     us_holidays = calendar().holidays(start=dates_range.min(), end=dates_range.max())    
-    df["is_holiday"] = (df.ts.dt.date.astype("datetime64").isin(us_holidays)).astype(np.int8)
+    df["is_holiday"] = df.ts.dt.normalize().astype("datetime64[ns]").isin(us_holidays).astype(np.int8)
+
+def printInfo(train, test, weather_train, weather_test, building_meta):
+    # Print the dataset information
+    print("Train dataset:")
+    print(train.info())
+    print("Test dataset:")
+    print(test.info())
+    print("Building Metadata:")
+    print(building_meta.info())
+    print("Train Weather:")
+    print(weather_train.info())
+    print("Test Weather:")
+    print(weather_test.info())
 
 if __name__ == "__main__":
-    train = load_data("train")
-    test = load_data("test")
-    building_meta = load_data("meta")
-    train_weather = load_data("weather_train")
-    test_weather = load_data("weather_test")
-    process_timestamp(train)
-    process_timestamp(test)
-    process_timestamp(train_weather)
-    process_timestamp(test_weather)
-    process_weather(train_weather, "train")
-    process_weather(test_weather, "test")
-    for window_size in [7, 73]:
-        add_lag_feature(train_weather, window=window_size)
-        add_lag_feature(test_weather, window=window_size)
-    train = pd.merge(train, building_meta, "left", "building_id")
-    train = pd.merge(train, train_weather, "left", ["site_id", "timestamp"])
-    test = pd.merge(test, building_meta, "left", "building_id")
-    test = pd.merge(test, test_weather, "left", ["site_id", "timestamp"])
-    add_features(train)
-    add_features(test)
+    # Loading the data
+    with timer("Loading data"):
+        train = load_data("train")
+        test = load_data("test")
+        building_meta = load_data("meta")
+        train_weather = load_data("weather_train")
+        test_weather = load_data("weather_test")
+
+    # printInfo(train, test, train_weather, test_weather, building_meta)
+
+
+    # Reduce the dataset for faster pre-processing. But only if faster flag is true
+    with timer("Dataset Reduction for testing pre-processing"):
+        reduce= False
+        n = len(sys.argv)
+        if(n>1):
+            if(sys.argv[1]=="--faster"):
+                reduce = True
+                print("Reducing Dataset option enabled. Reducing dataset for faster pre-processing.")
+                train, test, building_meta, train_weather, test_weather = reduceDataSet(train, test, building_meta, train_weather, test_weather)
+                print("Dataset reduced.")
+            else:
+                print("Invalid argument. Please use --faster to reduce dataset for faster pre-processing.")
+                sys.exit()
+        else:
+            print("Reducing Dataset option not enabled. Proceeding with full dataset.")
+
+        # if reduce:
+        #     printInfo(train, test, train_weather, test_weather, building_meta)
+    
+    # Pre-processing
+    print(f"INFO: Pre-processing started.")
+    print(f"UPDATE: Processing timestamp.")
+    train["ts"] = pd.to_datetime(train.timestamp)
+    test["ts"] = pd.to_datetime(test.timestamp)
+    with timer("Processing TimeStamps"):
+        process_timestamp(train)
+        process_timestamp(test)
+        process_timestamp(train_weather)
+        process_timestamp(test_weather)
+
+    print(f"UPDATE: Processing weather.")
+    with timer("Processing Weather Data"):
+        process_weather(train_weather, "train")
+        process_weather(test_weather, "test")
+
+    with timer("Adding Lag features"):
+        print(f"UPDATE: Adding lag features.")
+        for window_size in [7, 73]:
+            add_lag_feature(train_weather, window=window_size)
+            add_lag_feature(test_weather, window=window_size)
+
+    
+    # Merge datasets
+    with timer("Merging Datasets"):
+        print(f"UPDATE: Merging datasets.")
+        train = pd.merge(train, building_meta, "left", "building_id")
+        train = pd.merge(train, train_weather, "left", ["site_id", "timestamp"])
+        test = pd.merge(test, building_meta, "left", "building_id")
+        test = pd.merge(test, test_weather, "left", ["site_id", "timestamp"])
+
+    # Add features
+    with timer("Adding Features"):
+        print(f"UPDATE: Adding features.")
+        add_features(train)
+        add_features(test)
+
+    with timer("Free up memory"):
+        del train_weather, test_weather
+        gc.collect()
+    
+    with timer("Remove unnecessary columns"):
+        train.drop(["ts"], axis=1, inplace=True)
+        test.drop(["ts"], axis=1, inplace=True)
+
+
     gc.collect()
     train.info()
     test.info()
+
+    # Save processed data
+    with timer("Saving Processed Data"):
+        train.to_feather("../Processed_Data/train_processed.feather")
+        test.to_feather("../Processed_Data/test_processed.feather")
+    
+    print("Preprocessing complete! Processed data saved.")
+    gc.collect()
