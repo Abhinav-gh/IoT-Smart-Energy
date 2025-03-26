@@ -8,3 +8,4 @@ __pycache__
 lgbm_model_fold1.txt
 lgbm_model_fold2.txt
 lgbm_model_fold3.txt
+security/data/*
