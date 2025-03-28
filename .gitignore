@@ -6,3 +6,4 @@ __pycache__
 *.pth
 *.h5
 lgbm_model_fold*
+security/data/*
