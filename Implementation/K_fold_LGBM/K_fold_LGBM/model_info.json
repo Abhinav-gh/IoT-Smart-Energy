@@ -1,0 +1,55 @@
+{
+    "timestamp": "2025-03-28 14:46:56",
+    "n_folds": 5,
+    "shuffle": true,
+    "random_state": 42,
+    "lgbm_params": {
+        "objective": "regression",
+        "boosting": "gbdt",
+        "num_leaves": 1280,
+        "learning_rate": 0.05,
+        "feature_fraction": 0.85,
+        "reg_lambda": 2,
+        "metric": "rmse"
+    },
+    "average_rmse": 0.3335948238534619,
+    "best_rmse": 0.3312845423764159,
+    "best_model_fold": 3,
+    "fold_models": {
+        "fold_1": {
+            "model_path": "./K_fold_LGBM/lgbm_model_fold1.txt",
+            "rmse": 0.33486631402200273,
+            "training_start_time": "2025-03-28 11:43:51",
+            "training_end_time": "2025-03-28 11:53:49",
+            "best_iteration": 1000
+        },
+        "fold_2": {
+            "model_path": "./K_fold_LGBM/lgbm_model_fold2.txt",
+            "rmse": 0.33495552385733096,
+            "training_start_time": "2025-03-28 11:53:50",
+            "training_end_time": "2025-03-28 12:44:54",
+            "best_iteration": 1000
+        },
+        "fold_3": {
+            "model_path": "./K_fold_LGBM/lgbm_model_fold3.txt",
+            "rmse": 0.3312845423764159,
+            "training_start_time": "2025-03-28 12:44:56",
+            "training_end_time": "2025-03-28 14:25:43",
+            "best_iteration": 1000
+        },
+        "fold_4": {
+            "model_path": "./K_fold_LGBM/lgbm_model_fold4.txt",
+            "rmse": 0.33163785619197744,
+            "training_start_time": "2025-03-28 14:25:46",
+            "training_end_time": "2025-03-28 14:35:30",
+            "best_iteration": 1000
+        },
+        "fold_5": {
+            "model_path": "./K_fold_LGBM/lgbm_model_fold5.txt",
+            "rmse": 0.3352298828195823,
+            "training_start_time": "2025-03-28 14:35:32",
+            "training_end_time": "2025-03-28 14:46:55",
+            "best_iteration": 1000
+        }
+    }
+}
