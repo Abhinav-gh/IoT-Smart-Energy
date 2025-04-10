@@ -1,5 +1,5 @@
 {
-    "timestamp": "2025-03-28 14:46:56",
+    "timestamp": "2025-04-10 16:14:11",
     "n_folds": 5,
     "shuffle": true,
     "random_state": 42,
@@ -12,44 +12,44 @@
         "reg_lambda": 2,
         "metric": "rmse"
     },
-    "average_rmse": 0.3335948238534619,
-    "best_rmse": 0.3312845423764159,
-    "best_model_fold": 3,
+    "average_rmse": 0.6460691412319591,
+    "best_rmse": 0.6372114595460193,
+    "best_model_fold": 1,
     "fold_models": {
         "fold_1": {
             "model_path": "./K_fold_LGBM/lgbm_model_fold1.txt",
-            "rmse": 0.33486631402200273,
-            "training_start_time": "2025-03-28 11:43:51",
-            "training_end_time": "2025-03-28 11:53:49",
-            "best_iteration": 1000
+            "rmse": 0.6372114595460193,
+            "training_start_time": "2025-04-10 16:13:00",
+            "training_end_time": "2025-04-10 16:13:16",
+            "best_iteration": 69
         },
         "fold_2": {
             "model_path": "./K_fold_LGBM/lgbm_model_fold2.txt",
-            "rmse": 0.33495552385733096,
-            "training_start_time": "2025-03-28 11:53:50",
-            "training_end_time": "2025-03-28 12:44:54",
-            "best_iteration": 1000
+            "rmse": 0.651993884027003,
+            "training_start_time": "2025-04-10 16:13:16",
+            "training_end_time": "2025-04-10 16:13:30",
+            "best_iteration": 68
         },
         "fold_3": {
             "model_path": "./K_fold_LGBM/lgbm_model_fold3.txt",
-            "rmse": 0.3312845423764159,
-            "training_start_time": "2025-03-28 12:44:56",
-            "training_end_time": "2025-03-28 14:25:43",
-            "best_iteration": 1000
+            "rmse": 0.6415976859770031,
+            "training_start_time": "2025-04-10 16:13:30",
+            "training_end_time": "2025-04-10 16:13:45",
+            "best_iteration": 67
         },
         "fold_4": {
             "model_path": "./K_fold_LGBM/lgbm_model_fold4.txt",
-            "rmse": 0.33163785619197744,
-            "training_start_time": "2025-03-28 14:25:46",
-            "training_end_time": "2025-03-28 14:35:30",
-            "best_iteration": 1000
+            "rmse": 0.6442508200092795,
+            "training_start_time": "2025-04-10 16:13:45",
+            "training_end_time": "2025-04-10 16:13:59",
+            "best_iteration": 69
         },
         "fold_5": {
             "model_path": "./K_fold_LGBM/lgbm_model_fold5.txt",
-            "rmse": 0.3352298828195823,
-            "training_start_time": "2025-03-28 14:35:32",
-            "training_end_time": "2025-03-28 14:46:55",
-            "best_iteration": 1000
+            "rmse": 0.6552918566004906,
+            "training_start_time": "2025-04-10 16:13:59",
+            "training_end_time": "2025-04-10 16:14:11",
+            "best_iteration": 66
         }
     }
 }
