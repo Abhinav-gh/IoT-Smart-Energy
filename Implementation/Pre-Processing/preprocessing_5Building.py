@@ -26,37 +26,12 @@ def load_data(data_name):
     }
     return pd.read_feather(base_path+file_paths[data_name])
 
-def reduceDataSet(train, test, building_meta, weather_train, weather_test):
-    """Keep only the first 290 buildings by building id. It also prints how many
-    rows were removed every time it is called."""
-    numRows = len(train)
-    train = train[train.building_id < 290]
-    print(f"INFO: Removed {numRows - len(train)} rows from train dataset.")
-    numRows = len(test)
-    test = test[test.building_id < 290]
-    print(f"INFO: Removed {numRows - len(test)} rows from test dataset.")
-
-    numRows = len(building_meta)
-    building_meta = building_meta[building_meta.building_id < 290]
-    print(f"INFO: Removed {numRows - len(building_meta)} rows from building metadata.")
-
-    # The first 290 buildings actually exists in site_id 1 and site_id 2.
-    # So remove all site_id > 2 from weather_train and weather_test
-    numRows = len(weather_train)
-    weather_train = weather_train[weather_train.site_id < 3]
-    print(f"INFO: Removed {numRows - len(weather_train)} rows from train weather dataset.")
-    numRows = len(weather_test)
-    weather_test = weather_test[weather_test.site_id < 3]
-    print(f"INFO: Removed {numRows - len(weather_test)} rows from test weather dataset.")
-
-    return train, test, building_meta, weather_train, weather_test
-
 def reduceDataSetTo_5_Buildings(train, test, building_meta, weather_train, weather_test):
-    """Keep only the first 5 buildings for 2 sites. 
-    Prints how many rows were removed and the final shape of each DataFrame."""
+    """Keep only the first 5 buildings for 2 sites. It also prints how many
+    rows were removed every time it is called."""
 
     # Pick up 2 sites
-    selected_sites = [0, 1]
+    selected_sites = [0,1]
 
     # Get 5 building ids for each site
     selected_buildings = building_meta[building_meta.site_id.isin(selected_sites)]
@@ -68,45 +43,30 @@ def reduceDataSetTo_5_Buildings(train, test, building_meta, weather_train, weath
     )
 
     # Filter train
-    original_rows = len(train)
+    numRows = len(train)
     train = train[train.building_id.isin(selected_buildings)]
-    removed = original_rows - len(train)
-    print(f"INFO: Removed {removed} rows from train dataset ({removed} / {original_rows})")
+    print(f"INFO: Removed {numRows - len(train)} rows from train dataset.")
 
     # Filter test
-    original_rows = len(test)
+    numRows = len(test)
     test = test[test.building_id.isin(selected_buildings)]
-    removed = original_rows - len(test)
-    print(f"INFO: Removed {removed} rows from test dataset ({removed} / {original_rows})")
+    print(f"INFO: Removed {numRows - len(test)} rows from test dataset.")
 
     # Filter building metadata
-    original_rows = len(building_meta)
+    numRows = len(building_meta)
     building_meta = building_meta[building_meta.building_id.isin(selected_buildings)]
-    removed = original_rows - len(building_meta)
-    print(f"INFO: Removed {removed} rows from building metadata ({removed} / {original_rows})")
+    print(f"INFO: Removed {numRows - len(building_meta)} rows from building metadata.")
 
-    # Filter train weather
-    original_rows = len(weather_train)
+    # Filter weather data for the selected sites
+    numRows = len(weather_train)
     weather_train = weather_train[weather_train.site_id.isin(selected_sites)]
-    removed = original_rows - len(weather_train)
-    print(f"INFO: Removed {removed} rows from train weather dataset ({removed} / {original_rows})")
+    print(f"INFO: Removed {numRows - len(weather_train)} rows from train weather dataset.")
 
-    # Filter test weather
-    original_rows = len(weather_test)
+    numRows = len(weather_test)
     weather_test = weather_test[weather_test.site_id.isin(selected_sites)]
-    removed = original_rows - len(weather_test)
-    print(f"INFO: Removed {removed} rows from test weather dataset ({removed} / {original_rows})")
-
-    # Final shapes
-    print("\nFinal DataFrame Shapes:")
-    print(f"  Train Dataset: {train.shape}")
-    print(f"  Test Dataset: {test.shape}")
-    print(f"  Building Metadata: {building_meta.shape}")
-    print(f"  Train Weather: {weather_train.shape}")
-    print(f"  Test Weather: {weather_test.shape}")
+    print(f"INFO: Removed {numRows - len(weather_test)} rows from test weather dataset.")
 
     return train, test, building_meta, weather_train, weather_test
-
 # Define groupings and corresponding priors
 groups_and_priors = {
     ("hour",):        None,
@@ -213,17 +173,7 @@ def printInfo(train, test, weather_train, weather_test, building_meta):
     print("Test Weather:")
     print(weather_test.info())
 
-def print_usage():
-    print("Usage:")
-    print("  python your_script.py           # Run full dataset")
-    print("  python your_script.py --faster  # Reduce to 290 buildings")
-    print("  python your_script.py --tiny    # Reduce to 10 buildings (5 from 2 sites)")
-
-
 if __name__ == "__main__":
-
-    print_usage()
-
     # Loading the data
     with timer("Loading data"):
         train = load_data("train")
@@ -243,17 +193,10 @@ if __name__ == "__main__":
             if(sys.argv[1]=="--faster"):
                 reduce = True
                 print("Reducing Dataset option enabled. Reducing dataset for faster pre-processing.")
-                train, test, building_meta, train_weather, test_weather = reduceDataSet(train, test, building_meta, train_weather, test_weather)
+                train, test, building_meta, train_weather, test_weather = reduceDataSetTo_5_Buildings(train, test, building_meta, train_weather, test_weather)
                 print("Dataset reduced.")
-            elif(sys.argv[1]=="--tiny"):
-                print("Reducing Dataset: Keeping 5 buildings from 2 sites.")
-                train, test, building_meta, train_weather, test_weather = reduceDataSetTo_5_Buildings(
-                    train, test, building_meta, train_weather, test_weather
-                )
-                print("Tiny dataset reduction complete.")
             else:
-                print("Invalid argument")
-                print_usage()
+                print("Invalid argument. Please use --faster to reduce dataset for faster pre-processing.")
                 sys.exit()
         else:
             print("Reducing Dataset option not enabled. Proceeding with full dataset.")
