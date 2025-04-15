@@ -7,3 +7,6 @@ __pycache__
 *.h5
 lgbm_model_fold*
 security/data/*
+.qodo
+docker_FL/flwr_env/
+ 
