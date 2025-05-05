@@ -107,6 +107,22 @@ def reduceDataSetTo_5_Buildings(train, test, building_meta, weather_train, weath
 
     return train, test, building_meta, weather_train, weather_test
 
+def reduceToSingleBuilding(train, test, building_meta, weather_train, weather_test, building_id):
+    site_ids = building_meta[building_meta.building_id == building_id].site_id.unique()
+    
+    train = train[train.building_id == building_id]
+    test = test[test.building_id == building_id]
+    building_meta = building_meta[building_meta.building_id == building_id]
+    weather_train = weather_train[weather_train.site_id.isin(site_ids)]
+    weather_test = weather_test[weather_test.site_id.isin(site_ids)]
+
+    print(f"Reduced to Building ID {building_id}")
+    print(f"Train Shape: {train.shape}")
+    print(f"Test Shape: {test.shape}")
+    print(f"Weather Train Shape: {weather_train.shape}")
+    print(f"Weather Test Shape: {weather_test.shape}")
+    return train, test, building_meta, weather_train, weather_test
+
 # Define groupings and corresponding priors
 groups_and_priors = {
     ("hour",):        None,
@@ -218,6 +234,7 @@ def print_usage():
     print("  python your_script.py           # Run full dataset")
     print("  python your_script.py --faster  # Reduce to 290 buildings")
     print("  python your_script.py --tiny    # Reduce to 10 buildings (5 from 2 sites)")
+    print("  python your_script.py --building <building_id> # Reduce to single building")
 
 
 if __name__ == "__main__":
@@ -241,7 +258,7 @@ if __name__ == "__main__":
         n = len(sys.argv)
         if(n>1):
             if(sys.argv[1]=="--faster"):
-                reduce = True
+                reduce = True                                                          
                 print("Reducing Dataset option enabled. Reducing dataset for faster pre-processing.")
                 train, test, building_meta, train_weather, test_weather = reduceDataSet(train, test, building_meta, train_weather, test_weather)
                 print("Dataset reduced.")
@@ -251,6 +268,16 @@ if __name__ == "__main__":
                     train, test, building_meta, train_weather, test_weather
                 )
                 print("Tiny dataset reduction complete.")
+            elif sys.argv[1] == "--building":
+                selected_building_id = int(sys.argv[2])
+                print(f"Reducing Dataset: Keeping only building ID {selected_building_id}")
+                train, test, building_meta, train_weather, test_weather = reduceToSingleBuilding(
+                    train, test, building_meta, train_weather, test_weather, selected_building_id
+                )
+                print("Single building dataset reduction complete.")
+            elif sys.argv[1] == "--help":
+                print_usage()
+                sys.exit()
             else:
                 print("Invalid argument")
                 print_usage()
